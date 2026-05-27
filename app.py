@@ -3,6 +3,10 @@ import joblib
 import pandas as pd
 import numpy as np
 
+# ✅ Load XGBoost Model & Scaler
+model = joblib.load("final_ads_revenue_model.pkl")
+scaler = joblib.load("scaler.pkl")
+
 # ✅ Page Config
 st.set_page_config(
     page_title="YouTube Ad Revenue Predictor",
@@ -10,19 +14,16 @@ st.set_page_config(
     layout="centered"
 )
 
-# ✅ Load Model
-model = joblib.load("final_ads_revenue_model.pkl")
-
 # ✅ Title
 st.title("🎬 YouTube Ad Revenue Predictor")
 st.write("Enter your video details to predict ad revenue!")
 st.divider()
 
-# ✅ Input Fields (Realistic Range!)
+# ✅ Input Sliders
 st.subheader("📊 Video Details")
 
 watch_time = st.slider(
-    "⏱️ Watch Time (minutes)",
+    "⏱️ Total Watch Time (minutes)",
     min_value=14659,
     max_value=61557,
     value=37544
@@ -65,7 +66,9 @@ col3.metric("Log Likes", f"{log_likes:.4f}")
 
 st.divider()
 
-# ✅ Predict Button
+# ✅ Dollar to Rupees Conversion
+USD_TO_INR = 84.0
+
 if st.button("🚀 Predict Revenue", use_container_width=True):
 
     new_data = pd.DataFrame({
@@ -76,24 +79,36 @@ if st.button("🚀 Predict Revenue", use_container_width=True):
         'log_views': [log_views]
     })
 
-    prediction = np.expm1(model.predict(new_data))
-    revenue = prediction[0]
+    # ✅ Scale
+    new_data_scaled = scaler.transform(new_data)
+
+    # ✅ Predict
+    prediction = np.expm1(model.predict(new_data_scaled))
+    revenue_usd = prediction[0]
+    revenue_inr = revenue_usd * USD_TO_INR
 
     st.divider()
     st.subheader("💰 Prediction Result")
 
-    # Revenue Range Display
+    # ✅ INR Results
     col1, col2, col3 = st.columns(3)
-    col1.metric("Min Expected", f"${revenue * 0.9:.2f}")
-    col2.metric("Predicted Revenue", f"${revenue:.2f}", delta="Best Estimate")
-    col3.metric("Max Expected", f"${revenue * 1.1:.2f}")
+    col1.metric("Min Expected",
+                f"₹{revenue_inr * 0.9:,.2f}")
+    col2.metric("Predicted Revenue",
+                f"₹{revenue_inr:,.2f}",
+                delta="Best Estimate")
+    col3.metric("Max Expected",
+                f"₹{revenue_inr * 1.1:,.2f}")
 
     st.divider()
 
+    # ✅ USD Show
+    st.info(f"💵 In USD: ${revenue_usd:.2f}")
+
     # ✅ Performance Rating
-    if revenue >= 300:
+    if revenue_inr >= 25000:
         st.success("🔥 Excellent! High Revenue Video!")
-    elif revenue >= 200:
+    elif revenue_inr >= 16000:
         st.info("✅ Good! Average Revenue Video!")
     else:
         st.warning("📈 Low Revenue — Try increasing watch time!")
@@ -101,8 +116,11 @@ if st.button("🚀 Predict Revenue", use_container_width=True):
     # ✅ Tips
     st.subheader("💡 Tips to Improve Revenue")
     if watch_time < 30000:
-        st.write("⏱️ Increase watch time — it's the #1 revenue driver!")
+        st.write("⏱️ Increase watch time — #1 revenue driver!")
     if like_rate < 0.10:
-        st.write("👍 Improve like rate — engage your audience better!")
+        st.write("👍 Improve like rate!")
     if video_length < 10:
-        st.write("🎥 Make longer videos — more ad placements!")
+        st.write("🎥 Make longer videos!")
+
+    st.divider()
+    st.caption("🤖 Powered by XGBoost | R² Score: 94.58%")
