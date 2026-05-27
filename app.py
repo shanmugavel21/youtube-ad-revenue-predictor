@@ -3,23 +3,22 @@ import joblib
 import pandas as pd
 import numpy as np
 
-# ✅ Load XGBoost Model & Scaler
+ 
 model = joblib.load("final_ads_revenue_model.pkl")
 scaler = joblib.load("scaler.pkl")
-
-# ✅ Page Config
+ 
 st.set_page_config(
     page_title="YouTube Ad Revenue Predictor",
     page_icon="🎬",
     layout="centered"
 )
 
-# ✅ Title
+ 
 st.title("🎬 YouTube Ad Revenue Predictor")
 st.write("Enter your video details to predict ad revenue!")
 st.divider()
 
-# ✅ Input Sliders
+ 
 st.subheader("📊 Video Details")
 
 watch_time = st.slider(
